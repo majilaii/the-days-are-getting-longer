@@ -36,3 +36,16 @@ export interface Entry {
   mood?: string
   author?: Author
 }
+
+export interface DayMark {
+  _id: string
+  _createdAt?: string
+  date: string
+  note: string
+  photo?: SanityImage
+  author?: Author
+}
+
+export interface AboutPageData {
+  photos?: SanityImage[]
+}

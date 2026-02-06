@@ -3,6 +3,8 @@ import { ThemeToggle } from './ThemeToggle'
 import { DaylightTitle } from './DaylightTitle'
 
 export function Header() {
+  const currentYear = new Date().getFullYear()
+
   return (
     <header className="border-b border-border-light dark:border-border-dark">
       <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
@@ -18,6 +20,12 @@ export function Header() {
             className="text-sm text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
           >
             Journal
+          </Link>
+          <Link
+            href={`/${currentYear}`}
+            className="text-sm text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
+          >
+            {currentYear}
           </Link>
           <Link
             href="/about"

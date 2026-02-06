@@ -23,6 +23,17 @@
   --color-card-dark: #1a1a24;
 }
 
+/* Stroke colors for year grid marks */
+:root {
+  --stroke-a: #b8860b;
+  --stroke-b: #6b8cae;
+}
+
+:is(.dark) {
+  --stroke-a: #d4a44a;
+  --stroke-b: #8fb0cc;
+}
+
 /* Base styles */
 body {
   font-family: var(--font-sans);

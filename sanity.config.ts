@@ -13,7 +13,25 @@ export default defineConfig({
     types: schemaTypes,
   },
   plugins: [
-    structureTool(),
+    structureTool({
+      structure: (S) =>
+        S.list()
+          .title('Content')
+          .items([
+            S.listItem()
+              .title('About Page')
+              .id('aboutPage')
+              .child(
+                S.document()
+                  .schemaType('aboutPage')
+                  .documentId('aboutPage')
+              ),
+            S.divider(),
+            ...S.documentTypeListItems().filter(
+              (item) => !['aboutPage'].includes(item.getId()!)
+            ),
+          ]),
+    }),
     visionTool({ defaultApiVersion: apiVersion }),
   ],
   document: {

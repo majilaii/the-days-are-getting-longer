@@ -51,3 +51,28 @@ export const entriesByTagQuery = groq`
 export const allTagsQuery = groq`
   array::unique(*[_type == "entry" && defined(tags)].tags[])
 `
+
+/** All day marks for a given year */
+export const dayMarksByYearQuery = groq`
+  *[_type == "dayMark" && date >= $yearStart && date <= $yearEnd] | order(date asc) {
+    _id,
+    _createdAt,
+    date,
+    note,
+    photo,
+    author->{ name, slug }
+  }
+`
+
+/** About page singleton */
+export const aboutPageQuery = groq`
+  *[_type == "aboutPage"][0] {
+    photos[] {
+      _key,
+      alt,
+      caption,
+      asset,
+      hotspot
+    }
+  }
+`

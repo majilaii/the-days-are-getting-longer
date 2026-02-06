@@ -4,7 +4,7 @@ import type { DocumentActionComponent } from 'sanity'
 
 /**
  * Wraps a document action to disable it when the current user
- * is not the author of the entry.
+ * is not the author of the document.
  */
 function withOwnerOnly(
   OriginalAction: DocumentActionComponent
@@ -20,7 +20,6 @@ function withOwnerOnly(
 
     useEffect(() => {
       if (!authorRef || !currentUser?.email) {
-        // No author set yet (new document) or not logged in -- allow
         setIsOwner(true)
         return
       }
@@ -35,10 +34,8 @@ function withOwnerOnly(
 
     const result = OriginalAction(props)
 
-    // Still loading or owner -- return original action
     if (isOwner !== false) return result
 
-    // Not owner -- disable the action
     if (!result) return null
     return {
       ...result,
@@ -47,15 +44,41 @@ function withOwnerOnly(
     }
   }
 
-  // Preserve the action's identity for Sanity's internals
   WrappedAction.action = OriginalAction.action
+  return WrappedAction
+}
 
+/**
+ * Wraps a document action to disable it permanently once the document
+ * has been published. Used for dayMarks -- once sealed, no one can edit.
+ */
+function withPermanent(
+  OriginalAction: DocumentActionComponent
+): DocumentActionComponent {
+  const WrappedAction: DocumentActionComponent = (props) => {
+    const result = OriginalAction(props)
+
+    // If the document has been published, seal it
+    if (props.published) {
+      if (!result) return null
+      return {
+        ...result,
+        disabled: true,
+        label: `${result.label} (sealed)`,
+      }
+    }
+
+    return result
+  }
+
+  WrappedAction.action = OriginalAction.action
   return WrappedAction
 }
 
 /**
  * Document actions resolver.
- * Wraps all entry actions with ownership checks.
+ * - Entries: owner-only (only author can edit)
+ * - Day marks: owner-only + permanent (sealed after publish)
  */
 export function ownerOnlyActions(
   prev: DocumentActionComponent[],
@@ -63,6 +86,9 @@ export function ownerOnlyActions(
 ): DocumentActionComponent[] {
   if (context.schemaType === 'entry') {
     return prev.map((action) => withOwnerOnly(action))
+  }
+  if (context.schemaType === 'dayMark') {
+    return prev.map((action) => withPermanent(withOwnerOnly(action)))
   }
   return prev
 }
