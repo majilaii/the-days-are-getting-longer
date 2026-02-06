@@ -130,7 +130,7 @@ export const entry = defineType({
       name: 'gallery',
       title: 'Photo Gallery',
       type: 'array',
-      description: 'Add photos to create a gallery at the bottom of the entry',
+      description: 'Drag and drop multiple photos from Finder to upload them all at once.',
       of: [
         {
           type: 'image',

@@ -1,28 +1,21 @@
-import { sanityFetch } from '@/sanity/lib/client'
-import { allEntriesQuery } from '@/sanity/lib/queries'
-import { EntryCard } from '@/components/EntryCard'
-import { groupEntriesByMonth } from '@/lib/utils'
-import type { Entry } from '@/lib/types'
-import type { Metadata } from 'next'
+import { sanityFetch } from "@/sanity/lib/client";
+import { allEntriesQuery } from "@/sanity/lib/queries";
+import { EntryCard } from "@/components/EntryCard";
+import { groupEntriesByMonth } from "@/lib/utils";
+import type { Entry } from "@/lib/types";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Journal',
-  description: 'All journal entries, organized by date.',
-}
+  title: "Journal",
+  description: "All journal entries, organized by date.",
+};
 
 export default async function JournalPage() {
-  const entries = await sanityFetch<Entry[]>(allEntriesQuery, undefined, [])
-  const grouped = groupEntriesByMonth(entries)
+  const entries = await sanityFetch<Entry[]>(allEntriesQuery, undefined, []);
+  const grouped = groupEntriesByMonth(entries);
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-16">
-      <h1 className="font-typewriter text-4xl font-semibold text-ink dark:text-ink-light tracking-tight mb-4">
-        Journal
-      </h1>
-      <p className="text-muted dark:text-muted-dark mb-16">
-        All entries, organized by date.
-      </p>
-
       {grouped.length > 0 ? (
         <div className="space-y-20">
           {grouped.map(([monthYear, monthEntries]) => (
@@ -46,5 +39,5 @@ export default async function JournalPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

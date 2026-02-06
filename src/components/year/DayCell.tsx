@@ -41,8 +41,8 @@ export function DayCell({
     )
   }
 
-  // All non-future cells are clickable (to mark or view)
-  const isClickable = !isFuture
+  // Only today (to mark) and days with marks (to view) are clickable
+  const isClickable = isToday || hasMarks
 
   return (
     <button

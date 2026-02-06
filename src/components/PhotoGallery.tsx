@@ -81,7 +81,7 @@ export function PhotoGallery({ images }: { images: SanityImage[] }) {
         >
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10 cursor-pointer"
+            className="absolute top-4 right-4 pt-[env(safe-area-inset-top)] text-white/70 hover:text-white transition-colors z-10 cursor-pointer"
             aria-label="Close lightbox"
           >
             <X size={28} />

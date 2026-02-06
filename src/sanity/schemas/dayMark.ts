@@ -10,9 +10,15 @@ export const dayMark = defineType({
       name: 'date',
       title: 'Date',
       type: 'date',
+      initialValue: () => new Date().toISOString().split('T')[0],
       validation: (rule) =>
-        rule.required().max(new Date().toISOString().split('T')[0]),
-      description: 'Cannot be a future date.',
+        rule.required().custom((value) => {
+          if (!value) return true
+          const today = new Date().toISOString().split('T')[0]
+          if (value !== today) return 'You can only cross out today'
+          return true
+        }),
+      description: 'Can only be today.',
     }),
     defineField({
       name: 'author',

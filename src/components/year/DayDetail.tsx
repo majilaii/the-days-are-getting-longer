@@ -44,6 +44,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
 
   const canAddMark = marks.length < 2
   const today = new Date().toISOString().split('T')[0]
+  const isToday = date === today
   const isFuture = date > today
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
       onClick={onClose}
     >
       <div
-        className="bg-paper dark:bg-paper-dark border border-border-light dark:border-border-dark rounded-t-2xl md:rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6"
+        className="bg-paper dark:bg-paper-dark border border-border-light dark:border-border-dark rounded-t-2xl md:rounded-xl max-w-lg w-full max-h-[85dvh] overflow-y-auto p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -187,8 +188,8 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
           </div>
         )}
 
-        {/* Mark form -- only if not fully crossed, not future, and not just succeeded */}
-        {canAddMark && !isFuture && status !== 'success' && (
+        {/* Mark form -- only for today, not fully crossed, and not just succeeded */}
+        {canAddMark && isToday && status !== 'success' && (
           <>
             {marks.length > 0 && (
               <div className="border-t border-border-light dark:border-border-dark my-6" />
@@ -275,7 +276,6 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
             This day hasn&apos;t happened yet.
           </p>
         )}
-
       </div>
     </div>
   )

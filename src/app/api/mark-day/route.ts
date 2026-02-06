@@ -54,11 +54,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Don't allow future dates
+    // Only allow marking today
     const today = new Date().toISOString().split('T')[0]
-    if (date > today) {
+    if (date !== today) {
       return NextResponse.json(
-        { error: 'Cannot mark a future date' },
+        { error: 'You can only cross out today' },
         { status: 400 }
       )
     }

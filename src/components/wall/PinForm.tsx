@@ -119,7 +119,7 @@ export function PinForm({ onPinAdded }: PinFormProps) {
       {/* Floating + button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-accent dark:bg-accent-light text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center cursor-pointer"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 z-40 w-14 h-14 rounded-full bg-accent dark:bg-accent-light text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center cursor-pointer"
         aria-label="Add a pin"
       >
         <Plus size={24} />
@@ -132,7 +132,7 @@ export function PinForm({ onPinAdded }: PinFormProps) {
           onClick={handleClose}
         >
           <div
-            className="w-full sm:max-w-md bg-paper dark:bg-paper-dark rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="w-full sm:max-w-md bg-paper dark:bg-paper-dark rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85dvh] overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
