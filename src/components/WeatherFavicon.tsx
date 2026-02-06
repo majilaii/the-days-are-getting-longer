@@ -70,36 +70,79 @@ async function fetchWeather(lat: number, lon: number) {
   }
 }
 
+const LOCATION_KEY = 'weather-favicon-loc'
+const LOCATION_DENIED_KEY = 'weather-favicon-denied'
+
+/** Get cached location or null */
+function getCachedLocation(): { lat: number; lon: number } | null {
+  try {
+    const raw = localStorage.getItem(LOCATION_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function cacheLocation(lat: number, lon: number) {
+  try {
+    localStorage.setItem(LOCATION_KEY, JSON.stringify({ lat, lon }))
+  } catch {}
+}
+
+function wasLocationDenied(): boolean {
+  try {
+    return localStorage.getItem(LOCATION_DENIED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markLocationDenied() {
+  try {
+    localStorage.setItem(LOCATION_DENIED_KEY, '1')
+  } catch {}
+}
+
 export default function WeatherFavicon() {
   useEffect(() => {
-    // Try geolocation
+    // If user already denied, just use the photo and don't ask again
+    if (wasLocationDenied()) {
+      setFaviconPhoto()
+      return
+    }
+
+    // If we have a cached location, use it immediately (no prompt)
+    const cached = getCachedLocation()
+    if (cached) {
+      fetchWeather(cached.lat, cached.lon)
+
+      // Silently refresh location in the background for next time
+      // (this won't prompt — permissions API remembers the grant)
+      navigator.geolocation?.getCurrentPosition(
+        (pos) => cacheLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {}
+      )
+      return
+    }
+
+    // First visit — ask once
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          cacheLocation(pos.coords.latitude, pos.coords.longitude)
           fetchWeather(pos.coords.latitude, pos.coords.longitude)
         },
         () => {
-          // Geolocation denied — use the photo fallback
+          // User denied — remember it, never ask again
+          markLocationDenied()
           setFaviconPhoto()
         },
         { timeout: 5000 }
       )
     } else {
-      // No geolocation support — use the photo fallback
       setFaviconPhoto()
     }
-
-    // Refresh every 15 minutes
-    const interval = setInterval(() => {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-          () => {}
-        )
-      }
-    }, 15 * 60 * 1000)
-
-    return () => clearInterval(interval)
   }, [])
 
   return null
