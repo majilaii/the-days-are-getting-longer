@@ -79,6 +79,7 @@ function withPermanent(
  * Document actions resolver.
  * - Entries: owner-only (only author can edit)
  * - Day marks: owner-only + permanent (sealed after publish)
+ * - Wall pins: owner-only + permanent (sealed after publish)
  */
 export function ownerOnlyActions(
   prev: DocumentActionComponent[],
@@ -87,7 +88,7 @@ export function ownerOnlyActions(
   if (context.schemaType === 'entry') {
     return prev.map((action) => withOwnerOnly(action))
   }
-  if (context.schemaType === 'dayMark') {
+  if (context.schemaType === 'dayMark' || context.schemaType === 'wallPin') {
     return prev.map((action) => withPermanent(withOwnerOnly(action)))
   }
   return prev

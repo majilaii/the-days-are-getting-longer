@@ -46,6 +46,19 @@ export interface DayMark {
   author?: Author
 }
 
+export interface WallPin {
+  _id: string
+  _createdAt?: string
+  date: string
+  pinType: 'photo' | 'quote' | 'song' | 'video'
+  photo?: SanityImage
+  quote?: string
+  songUrl?: string
+  videoUrl?: string
+  caption?: string
+  author?: Author
+}
+
 export interface AboutPageData {
   photos?: SanityImage[]
 }

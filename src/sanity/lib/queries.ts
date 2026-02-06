@@ -64,6 +64,22 @@ export const dayMarksByYearQuery = groq`
   }
 `
 
+/** All wall pins, ordered by date descending */
+export const allWallPinsQuery = groq`
+  *[_type == "wallPin"] | order(date desc, _createdAt desc) {
+    _id,
+    _createdAt,
+    date,
+    pinType,
+    photo,
+    quote,
+    songUrl,
+    videoUrl,
+    caption,
+    author->{ name, slug, avatar }
+  }
+`
+
 /** About page singleton */
 export const aboutPageQuery = groq`
   *[_type == "aboutPage"][0] {

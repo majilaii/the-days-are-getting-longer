@@ -22,6 +22,12 @@ export function Header() {
             Journal
           </Link>
           <Link
+            href="/wall"
+            className="text-sm text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
+          >
+            Wall
+          </Link>
+          <Link
             href={`/${currentYear}`}
             className="text-sm text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
           >
