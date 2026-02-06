@@ -10,7 +10,9 @@ export const wallPin = defineType({
       name: 'date',
       title: 'Date',
       type: 'date',
-      validation: (rule) => rule.required(),
+      validation: (rule) =>
+        rule.required().max(new Date().toISOString().split('T')[0]),
+      description: 'Cannot be a future date.',
     }),
     defineField({
       name: 'author',

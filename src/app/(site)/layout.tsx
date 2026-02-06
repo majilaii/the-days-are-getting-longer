@@ -1,10 +1,10 @@
-import { Header } from '@/components/Header'
-import { Footer } from '@/components/Footer'
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export default function SiteLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="min-h-screen flex flex-col">
@@ -12,5 +12,5 @@ export default function SiteLayout({
       <main className="flex-1">{children}</main>
       <Footer />
     </div>
-  )
+  );
 }

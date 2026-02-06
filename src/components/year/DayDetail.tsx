@@ -275,6 +275,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
             This day hasn&apos;t happened yet.
           </p>
         )}
+
       </div>
     </div>
   )
