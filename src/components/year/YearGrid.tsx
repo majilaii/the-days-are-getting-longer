@@ -1,9 +1,13 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import Link from 'next/link'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { DayCell } from './DayCell'
 import { DayDetail } from './DayDetail'
 import type { DayMark } from '@/lib/types'
+
+const START_YEAR = 2026
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -120,13 +124,45 @@ export function YearGrid({ year, marks: initialMarks }: YearGridProps) {
     setSelectedDate(null)
   }, [])
 
+  const currentYear = new Date().getFullYear()
+  const hasPrev = year > START_YEAR
+  const hasNext = year < currentYear
+
   return (
     <div className="w-full">
-      {/* Header */}
+      {/* Header with year navigation */}
       <div className="flex items-baseline justify-between mb-8">
-        <h1 className="font-typewriter text-5xl md:text-6xl font-semibold text-ink dark:text-ink-light tracking-tight">
-          {year}
-        </h1>
+        <div className="flex items-center gap-3">
+          {hasPrev ? (
+            <Link
+              href={`/${year - 1}`}
+              className="text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
+              aria-label="Previous year"
+            >
+              <ChevronLeft size={24} />
+            </Link>
+          ) : (
+            <span className="text-muted/30 dark:text-muted-dark/30">
+              <ChevronLeft size={24} />
+            </span>
+          )}
+          <h1 className="font-typewriter text-5xl md:text-6xl font-semibold text-ink dark:text-ink-light tracking-tight">
+            {year}
+          </h1>
+          {hasNext ? (
+            <Link
+              href={`/${year + 1}`}
+              className="text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"
+              aria-label="Next year"
+            >
+              <ChevronRight size={24} />
+            </Link>
+          ) : (
+            <span className="text-muted/30 dark:text-muted-dark/30">
+              <ChevronRight size={24} />
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted dark:text-muted-dark font-typewriter">
           {totalMarkedDays} days marked &middot; {fullyCrossed} fully crossed
         </p>
@@ -152,6 +188,7 @@ export function YearGrid({ year, marks: initialMarks }: YearGridProps) {
           </div>
 
           {/* Grid rows */}
+          <div className="flex flex-col gap-[4px]">
           {Array.from({ length: 7 }, (_, dow) => (
             <div key={dow} className="flex items-center gap-0">
               <span className="w-[18px] text-[10px] text-muted dark:text-muted-dark text-right mr-[2px] flex-shrink-0">
@@ -179,6 +216,7 @@ export function YearGrid({ year, marks: initialMarks }: YearGridProps) {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
 

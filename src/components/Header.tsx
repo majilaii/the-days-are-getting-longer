@@ -7,14 +7,14 @@ export function Header() {
 
   return (
     <header className="border-b border-border-light dark:border-border-dark">
-      <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
         <Link
           href="/"
-          className="font-typewriter text-sm text-ink dark:text-ink-light tracking-tight hover:text-accent dark:hover:text-accent-light transition-colors"
+          className="font-typewriter text-xs md:text-sm text-ink dark:text-ink-light tracking-tight hover:text-accent dark:hover:text-accent-light transition-colors"
         >
           <DaylightTitle />
         </Link>
-        <nav className="flex items-center gap-8">
+        <nav className="flex items-center gap-5 md:gap-8 flex-shrink-0">
           <Link
             href="/journal"
             className="text-sm text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors"

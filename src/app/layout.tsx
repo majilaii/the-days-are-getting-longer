@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import WeatherFavicon from '@/components/WeatherFavicon'
 import './globals.css'
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} antialiased`}
       >
+        <WeatherFavicon />
         {children}
       </body>
     </html>
