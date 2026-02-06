@@ -6,7 +6,7 @@ export function Header() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <header className="border-b border-border-light dark:border-border-dark">
+    <header className="border-b border-border-light dark:border-border-dark relative z-10">
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
         <Link
           href="/"
