@@ -23,6 +23,18 @@ function weatherEmoji(code: number, isDay: boolean): string {
   return isDay ? '☀️' : '🌙'
 }
 
+function setFavicon(href: string, type = 'image/png') {
+  // Remove existing favicons
+  const existing = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
+  existing.forEach((el) => el.remove())
+
+  const link = document.createElement('link')
+  link.rel = 'icon'
+  link.type = type
+  link.href = href
+  document.head.appendChild(link)
+}
+
 function setFaviconEmoji(emoji: string) {
   const canvas = document.createElement('canvas')
   canvas.width = 64
@@ -35,17 +47,12 @@ function setFaviconEmoji(emoji: string) {
   ctx.textBaseline = 'middle'
   ctx.fillText(emoji, 32, 36)
 
-  const url = canvas.toDataURL('image/png')
+  setFavicon(canvas.toDataURL('image/png'))
+}
 
-  // Remove existing favicons
-  const existing = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
-  existing.forEach((el) => el.remove())
-
-  const link = document.createElement('link')
-  link.rel = 'icon'
-  link.type = 'image/png'
-  link.href = url
-  document.head.appendChild(link)
+/** Use the static photo favicon (the summery green default) */
+function setFaviconPhoto() {
+  setFavicon('/icon.png')
 }
 
 async function fetchWeather(lat: number, lon: number) {
@@ -58,9 +65,8 @@ async function fetchWeather(lat: number, lon: number) {
     const isDay: boolean = data.current.is_day === 1
     setFaviconEmoji(weatherEmoji(code, isDay))
   } catch {
-    // Fallback to time-based
-    const hour = new Date().getHours()
-    setFaviconEmoji(hour >= 6 && hour < 20 ? '☀️' : '🌙')
+    // Weather fetch failed — use the photo fallback
+    setFaviconPhoto()
   }
 }
 
@@ -73,15 +79,14 @@ export default function WeatherFavicon() {
           fetchWeather(pos.coords.latitude, pos.coords.longitude)
         },
         () => {
-          // Geolocation denied — fall back to time of day
-          const hour = new Date().getHours()
-          setFaviconEmoji(hour >= 6 && hour < 20 ? '☀️' : '🌙')
+          // Geolocation denied — use the photo fallback
+          setFaviconPhoto()
         },
         { timeout: 5000 }
       )
     } else {
-      const hour = new Date().getHours()
-      setFaviconEmoji(hour >= 6 && hour < 20 ? '☀️' : '🌙')
+      // No geolocation support — use the photo fallback
+      setFaviconPhoto()
     }
 
     // Refresh every 15 minutes
