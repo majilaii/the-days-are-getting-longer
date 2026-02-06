@@ -1,67 +1,67 @@
-'use client'
+"use client";
 
-import Image from 'next/image'
-import { Music, Play } from 'lucide-react'
-import { urlFor } from '@/sanity/lib/image'
-import type { WallPin } from '@/lib/types'
+import Image from "next/image";
+import { Music, Play } from "lucide-react";
+import { urlFor } from "@/sanity/lib/image";
+import type { WallPin } from "@/lib/types";
 
 /** Extract a YouTube video ID from common URL formats */
 function getYouTubeId(url: string): string | null {
   const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/
-  )
-  return match ? match[1] : null
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/,
+  );
+  return match ? match[1] : null;
 }
 
 /** Check if a URL is a Spotify link */
 function getSpotifyEmbedUrl(url: string): string | null {
   // Convert open.spotify.com/track/XXX to embed URL
   const match = url.match(
-    /open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/
-  )
+    /open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/,
+  );
   if (match) {
-    return `https://open.spotify.com/embed/${match[1]}/${match[2]}?theme=0`
+    return `https://open.spotify.com/embed/${match[1]}/${match[2]}?theme=0`;
   }
-  return null
+  return null;
 }
 
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T12:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // Deterministic soft color from pin ID for quote backgrounds
 const QUOTE_COLORS = [
-  'bg-amber-50 dark:bg-amber-950/40',
-  'bg-rose-50 dark:bg-rose-950/40',
-  'bg-sky-50 dark:bg-sky-950/40',
-  'bg-emerald-50 dark:bg-emerald-950/40',
-  'bg-violet-50 dark:bg-violet-950/40',
-  'bg-orange-50 dark:bg-orange-950/40',
-]
+  "bg-amber-50 dark:bg-amber-950/40",
+  "bg-rose-50 dark:bg-rose-950/40",
+  "bg-sky-50 dark:bg-sky-950/40",
+  "bg-emerald-50 dark:bg-emerald-950/40",
+  "bg-violet-50 dark:bg-violet-950/40",
+  "bg-orange-50 dark:bg-orange-950/40",
+];
 
 function getQuoteColor(id: string) {
-  let hash = 0
+  let hash = 0;
   for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i)
-    hash |= 0
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
   }
-  return QUOTE_COLORS[Math.abs(hash) % QUOTE_COLORS.length]
+  return QUOTE_COLORS[Math.abs(hash) % QUOTE_COLORS.length];
 }
 
 export function PinCard({ pin }: { pin: WallPin }) {
-  const authorName = pin.author?.name || 'Unknown'
-  const dateStr = formatDate(pin.date)
+  const authorName = pin.author?.name || "Unknown";
+  const dateStr = formatDate(pin.date);
 
   return (
     <div className="break-inside-avoid mb-4 group">
-      <div className="rounded-xl overflow-hidden bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div className="rounded-xl overflow-hidden bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 ease-out">
         {/* Photo pin */}
-        {pin.pinType === 'photo' && pin.photo && (
+        {pin.pinType === "photo" && pin.photo && (
           <div className="relative">
             <Image
               src={urlFor(pin.photo).width(600).url()}
-              alt={pin.photo.alt || pin.caption || ''}
+              alt={pin.photo.alt || pin.caption || ""}
               width={600}
               height={600}
               className="w-full h-auto"
@@ -76,7 +76,7 @@ export function PinCard({ pin }: { pin: WallPin }) {
         )}
 
         {/* Quote pin */}
-        {pin.pinType === 'quote' && (
+        {pin.pinType === "quote" && (
           <div className={`p-5 ${getQuoteColor(pin._id)}`}>
             <p className="font-typewriter text-base md:text-lg leading-relaxed text-ink dark:text-ink-light">
               &ldquo;{pin.quote}&rdquo;
@@ -90,7 +90,7 @@ export function PinCard({ pin }: { pin: WallPin }) {
         )}
 
         {/* Song pin */}
-        {pin.pinType === 'song' && pin.songUrl && (
+        {pin.pinType === "song" && pin.songUrl && (
           <div className="p-0">
             {getSpotifyEmbedUrl(pin.songUrl) ? (
               <iframe
@@ -105,7 +105,7 @@ export function PinCard({ pin }: { pin: WallPin }) {
               <div className="relative aspect-video">
                 <Image
                   src={`https://img.youtube.com/vi/${getYouTubeId(pin.songUrl)}/hqdefault.jpg`}
-                  alt={pin.caption || 'Song'}
+                  alt={pin.caption || "Song"}
                   fill
                   className="object-cover"
                   sizes="(max-width: 640px) 50vw, 33vw"
@@ -116,7 +116,11 @@ export function PinCard({ pin }: { pin: WallPin }) {
                   rel="noopener noreferrer"
                   className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
                 >
-                  <Play size={40} className="text-white drop-shadow-lg" fill="white" />
+                  <Play
+                    size={40}
+                    className="text-white drop-shadow-lg"
+                    fill="white"
+                  />
                 </a>
               </div>
             ) : (
@@ -127,11 +131,14 @@ export function PinCard({ pin }: { pin: WallPin }) {
                 className="flex items-center gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
               >
                 <div className="w-12 h-12 rounded-lg bg-accent/10 dark:bg-accent-light/10 flex items-center justify-center flex-shrink-0">
-                  <Music size={20} className="text-accent dark:text-accent-light" />
+                  <Music
+                    size={20}
+                    className="text-accent dark:text-accent-light"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink dark:text-ink-light truncate">
-                    {pin.caption || 'Listen'}
+                    {pin.caption || "Listen"}
                   </p>
                   <p className="text-xs text-muted dark:text-muted-dark truncate">
                     {new URL(pin.songUrl).hostname}
@@ -139,16 +146,20 @@ export function PinCard({ pin }: { pin: WallPin }) {
                 </div>
               </a>
             )}
-            {pin.caption && !getSpotifyEmbedUrl(pin.songUrl) && !getYouTubeId(pin.songUrl) ? null : pin.caption ? (
+            {pin.caption &&
+            !getSpotifyEmbedUrl(pin.songUrl) &&
+            !getYouTubeId(pin.songUrl) ? null : pin.caption ? (
               <div className="px-4 py-2">
-                <p className="text-sm text-muted dark:text-muted-dark">{pin.caption}</p>
+                <p className="text-sm text-muted dark:text-muted-dark">
+                  {pin.caption}
+                </p>
               </div>
             ) : null}
           </div>
         )}
 
         {/* Video pin */}
-        {pin.pinType === 'video' && pin.videoUrl && (
+        {pin.pinType === "video" && pin.videoUrl && (
           <div>
             {getYouTubeId(pin.videoUrl) ? (
               <div className="relative aspect-video">
@@ -168,11 +179,14 @@ export function PinCard({ pin }: { pin: WallPin }) {
                 className="flex items-center gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
               >
                 <div className="w-12 h-12 rounded-lg bg-accent/10 dark:bg-accent-light/10 flex items-center justify-center flex-shrink-0">
-                  <Play size={20} className="text-accent dark:text-accent-light" />
+                  <Play
+                    size={20}
+                    className="text-accent dark:text-accent-light"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink dark:text-ink-light truncate">
-                    {pin.caption || 'Watch'}
+                    {pin.caption || "Watch"}
                   </p>
                   <p className="text-xs text-muted dark:text-muted-dark truncate">
                     {new URL(pin.videoUrl).hostname}
@@ -182,7 +196,9 @@ export function PinCard({ pin }: { pin: WallPin }) {
             )}
             {pin.caption && (
               <div className="px-4 py-2">
-                <p className="text-sm text-muted dark:text-muted-dark">{pin.caption}</p>
+                <p className="text-sm text-muted dark:text-muted-dark">
+                  {pin.caption}
+                </p>
               </div>
             )}
           </div>
@@ -195,5 +211,5 @@ export function PinCard({ pin }: { pin: WallPin }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
