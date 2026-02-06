@@ -19,7 +19,7 @@ export default async function WallPage() {
           The Wall
         </h1>
         <p className="text-sm text-muted dark:text-muted-dark max-w-lg">
-          One pin per day. Photos, quotes, songs, videos — whatever catches the moment.
+          One pin per day. My attempt at creating your Crackinterest wall. 
         </p>
       </section>
 
