@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# the days are getting longer
+
+A shared journal by Jacky and Dom, built with **Next.js** and **Sanity CMS**. Anyone can read it; only the two authors can write, and each can only edit their own entries.
+
+The site title is dynamic -- it shows today's daylight duration for London and whether the days are getting longer or shorter. It changes every day.
+
+## Stack
+
+- **Next.js 16** (App Router) -- public site
+- **Sanity v3** -- headless CMS with embedded Studio at `/studio`
+- **Tailwind CSS v4** -- styling
+- **Vercel** -- deployment
 
 ## Getting Started
 
-First, run the development server:
+### 1. Create a Sanity Project
+
+1. Go to [sanity.io/manage](https://www.sanity.io/manage) and create a new project
+2. Note your **Project ID**
+3. Create a dataset called `production` (or any name you prefer)
+4. Under **API** settings, add `http://localhost:3000` to the CORS origins (with credentials allowed)
+
+### 2. Configure Environment Variables
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Edit `.env.local` with your Sanity project details:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SANITY_PROJECT_ID="your-project-id"
+NEXT_PUBLIC_SANITY_DATASET="production"
+NEXT_PUBLIC_SANITY_API_VERSION="2024-01-01"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Install & Run
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+- **Public site**: [http://localhost:3000](http://localhost:3000)
+- **Sanity Studio**: [http://localhost:3000/studio](http://localhost:3000/studio)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Set Up Authors
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Go to `/studio` and log in
+2. Create two **Author** documents -- one for Jacky, one for Dom
+3. For each, set the **email** field to match the Sanity login email
+4. Invite Dom to the Sanity project at [sanity.io/manage](https://www.sanity.io/manage) -> Members
 
-## Deploy on Vercel
+### 5. Start Writing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Create a new **Journal Entry** -- the author is auto-assigned based on who's logged in
+2. Fill in title, date, body, photos, tags, mood
+3. Click **Publish**
+4. Only the author of an entry can edit or publish it; the other person sees it as read-only
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+├── sanity.config.ts              # Studio config + owner-only actions
+├── src/
+│   ├── app/
+│   │   ├── (site)/               # Public site
+│   │   │   ├── page.tsx          # Homepage -- latest entries
+│   │   │   ├── journal/          # Timeline + entry pages
+│   │   │   ├── tags/[tag]/       # Entries filtered by tag
+│   │   │   └── about/            # About page
+│   │   └── studio/               # Sanity Studio (auth required)
+│   ├── components/               # Header, EntryCard, PhotoGallery, etc.
+│   ├── sanity/
+│   │   ├── schemas/              # Entry + Author schemas
+│   │   ├── components/           # AuthorAutoAssign custom input
+│   │   ├── plugins/              # ownerOnly edit restriction
+│   │   └── lib/                  # Client, queries, image helpers
+│   └── lib/
+│       ├── daylight.ts           # Daylight calculation (London lat 51.5)
+│       ├── types.ts              # TypeScript interfaces
+│       └── utils.ts              # Date formatting, etc.
+```
+
+## Features
+
+- **Dynamic title** -- shows daily daylight duration + direction ("10h 42m of light -- getting longer")
+- **Two-author system** -- auto-assigned author, ownership-based edit restrictions
+- **Typewriter typography** -- Courier New monospace for content
+- **Light/dark mode** -- system preference + manual toggle
+- **Photo gallery** -- grid layout with lightbox and keyboard navigation
+- **Portable Text** -- rich content with headings, quotes, inline images
+- **Tags + mood** -- organize and categorize entries
+
+## Deploying to Vercel
+
+1. Push to GitHub
+2. Import in [Vercel](https://vercel.com)
+3. Set env vars (`NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`)
+4. Add your production domain to Sanity CORS origins
+5. Deploy
