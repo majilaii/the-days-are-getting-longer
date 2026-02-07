@@ -38,7 +38,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
   const [pin, setPin] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -83,9 +83,30 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
     e.preventDefault()
     if (!note.trim() || !pin.trim()) return
 
-    setStatus('submitting')
     setErrorMsg('')
 
+    // Save PIN for next time
+    localStorage.setItem('daymark_pin', pin)
+
+    // Optimistic: show "Sealed." immediately and update the grid
+    const optimisticMark: DayMark = {
+      _id: `optimistic-${Date.now()}`,
+      _createdAt: new Date().toISOString(),
+      date,
+      note: note.trim(),
+      photo: photoPreview ? { _type: 'image', asset: { _ref: '', _type: 'reference' } } : undefined,
+      author: undefined, // will be filled by server response
+    }
+
+    setStatus('success')
+    onMarkAdded(optimisticMark)
+
+    // Brief "Sealed." flash, then close — don't wait for the network
+    setTimeout(() => {
+      onClose()
+    }, 1200)
+
+    // Fire the request in the background
     const formData = new FormData()
     formData.append('pin', pin)
     formData.append('date', date)
@@ -93,31 +114,22 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
     if (photo) formData.append('photo', photo)
 
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
       const res = await fetch('/api/mark-day', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       })
-      const data = await res.json()
+      clearTimeout(timeout)
 
       if (!res.ok) {
-        setStatus('error')
-        setErrorMsg(data.error || 'Something went wrong')
-        return
+        const data = await res.json()
+        console.error('mark-day failed:', data.error)
       }
-
-      // Save PIN for next time
-      localStorage.setItem('daymark_pin', pin)
-
-      setStatus('success')
-      onMarkAdded(data.mark)
-
-      // Brief "Sealed." flash, then close
-      setTimeout(() => {
-        onClose()
-      }, 1500)
-    } catch {
-      setStatus('error')
-      setErrorMsg('Network error. Try again.')
+    } catch (err) {
+      console.error('mark-day network error:', err)
     }
   }
 
@@ -209,7 +221,6 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
                 rows={3}
                 className="w-full bg-transparent border border-border-light dark:border-border-dark rounded-lg px-3 py-2 font-typewriter text-sm text-ink dark:text-ink-light placeholder:text-muted/50 dark:placeholder:text-muted-dark/50 resize-none focus:outline-none focus:ring-1 focus:ring-accent dark:focus:ring-accent-light"
                 required
-                disabled={status === 'submitting'}
               />
 
               <div className="flex items-center gap-3">
@@ -217,7 +228,6 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   className="flex items-center gap-1.5 text-xs text-muted dark:text-muted-dark hover:text-ink dark:hover:text-ink-light transition-colors cursor-pointer"
-                  disabled={status === 'submitting'}
                 >
                   <Camera size={14} />
                   {photo ? 'Change photo' : 'Add photo'}
@@ -248,16 +258,13 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
                   placeholder="PIN"
                   className="w-20 bg-transparent border border-border-light dark:border-border-dark rounded-lg px-3 py-2 font-typewriter text-sm text-center text-ink dark:text-ink-light placeholder:text-muted/50 focus:outline-none focus:ring-1 focus:ring-accent dark:focus:ring-accent-light"
                   required
-                  disabled={status === 'submitting'}
                 />
                 <button
                   type="submit"
-                  disabled={
-                    status === 'submitting' || !note.trim() || !pin.trim()
-                  }
+                  disabled={!note.trim() || !pin.trim()}
                   className="flex-1 bg-ink dark:bg-ink-light text-paper dark:text-paper-dark font-typewriter text-sm py-2 rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity cursor-pointer"
                 >
-                  {status === 'submitting' ? 'Sealing...' : 'Cross it out'}
+                  Cross it out
                 </button>
               </div>
 

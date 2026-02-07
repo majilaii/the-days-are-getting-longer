@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, X, Camera, Quote, Music, Video, Loader2 } from 'lucide-react'
+import { Plus, X, Camera, Quote, Music, Video } from 'lucide-react'
 import type { WallPin } from '@/lib/types'
 
 const PIN_TYPES = [
@@ -24,7 +24,6 @@ export function PinForm({ onPinAdded }: PinFormProps) {
   const [songUrl, setSongUrl] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -57,60 +56,78 @@ export function PinForm({ onPinAdded }: PinFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    setSubmitting(true)
 
-    try {
-      const formData = new FormData()
-      formData.append('pin', pin)
-      formData.append('pinType', pinType)
-      if (caption.trim()) formData.append('caption', caption.trim())
+    // Client-side validation first (before any network)
+    const formData = new FormData()
+    formData.append('pin', pin)
+    formData.append('pinType', pinType)
+    if (caption.trim()) formData.append('caption', caption.trim())
 
-      if (pinType === 'photo') {
-        const file = fileRef.current?.files?.[0]
-        if (!file) {
-          setError('Please select a photo')
-          setSubmitting(false)
-          return
-        }
-        formData.append('photo', file)
-      } else if (pinType === 'quote') {
-        if (!quote.trim()) {
-          setError('Please enter a quote')
-          setSubmitting(false)
-          return
-        }
-        formData.append('quote', quote.trim())
-      } else if (pinType === 'song') {
-        if (!songUrl.trim()) {
-          setError('Please enter a song URL')
-          setSubmitting(false)
-          return
-        }
-        formData.append('songUrl', songUrl.trim())
-      } else if (pinType === 'video') {
-        if (!videoUrl.trim()) {
-          setError('Please enter a video URL')
-          setSubmitting(false)
-          return
-        }
-        formData.append('videoUrl', videoUrl.trim())
-      }
-
-      const res = await fetch('/api/pin-wall', { method: 'POST', body: formData })
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Something went wrong')
-        setSubmitting(false)
+    let photoFile: File | undefined
+    if (pinType === 'photo') {
+      photoFile = fileRef.current?.files?.[0]
+      if (!photoFile) {
+        setError('Please select a photo')
         return
       }
+      formData.append('photo', photoFile)
+    } else if (pinType === 'quote') {
+      if (!quote.trim()) {
+        setError('Please enter a quote')
+        return
+      }
+      formData.append('quote', quote.trim())
+    } else if (pinType === 'song') {
+      if (!songUrl.trim()) {
+        setError('Please enter a song URL')
+        return
+      }
+      formData.append('songUrl', songUrl.trim())
+    } else if (pinType === 'video') {
+      if (!videoUrl.trim()) {
+        setError('Please enter a video URL')
+        return
+      }
+      formData.append('videoUrl', videoUrl.trim())
+    }
 
-      onPinAdded(data.pin)
-      handleClose()
-    } catch {
-      setError('Something went wrong. Try again.')
-    } finally {
-      setSubmitting(false)
+    // Optimistic: build a fake pin and update the wall immediately
+    const optimisticPin: WallPin = {
+      _id: `optimistic-${Date.now()}`,
+      _createdAt: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0],
+      pinType,
+      photo: photoFile && photoPreview
+        ? { _type: 'image', asset: { _ref: '', _type: 'reference' } }
+        : undefined,
+      quote: pinType === 'quote' ? quote.trim() : undefined,
+      songUrl: pinType === 'song' ? songUrl.trim() : undefined,
+      videoUrl: pinType === 'video' ? videoUrl.trim() : undefined,
+      caption: caption.trim() || undefined,
+      author: undefined,
+    }
+
+    onPinAdded(optimisticPin)
+    handleClose()
+
+    // Fire the request in the background
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
+      const res = await fetch('/api/pin-wall', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+
+      if (!res.ok) {
+        const data = await res.json()
+        console.error('pin-wall failed:', data.error)
+      }
+    } catch (err) {
+      console.error('pin-wall network error:', err)
     }
   }
 
@@ -291,17 +308,9 @@ export function PinForm({ onPinAdded }: PinFormProps) {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={submitting}
                 className="w-full py-2.5 rounded-lg bg-accent dark:bg-accent-light text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {submitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Pinning...
-                  </>
-                ) : (
-                  'Pin it'
-                )}
+                Pin it
               </button>
             </form>
           </div>
