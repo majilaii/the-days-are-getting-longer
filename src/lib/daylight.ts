@@ -21,7 +21,9 @@ function getDayOfYear(date: Date): number {
 
 /**
  * Calculate daylight duration in minutes for a given date and latitude.
- * Approximate, accurate to within a few minutes.
+ * Uses the standard zenith of 90.833° to account for atmospheric refraction
+ * (~34 arcmin) and solar semi-diameter (~16 arcmin), matching official
+ * sunrise/sunset times to within a few minutes.
  */
 export function calculateDaylightMinutes(
   date: Date,
@@ -34,9 +36,11 @@ export function calculateDaylightMinutes(
     -23.45 * Math.cos(toRadians((360 / 365) * (dayOfYear + 10)))
   )
 
-  // Hour angle at sunrise/sunset
+  // Hour angle at sunrise/sunset using official zenith (90.833°)
   const latRad = toRadians(latitude)
-  const cosHourAngle = -Math.tan(latRad) * Math.tan(declination)
+  const cosHourAngle =
+    (Math.cos(toRadians(90.833)) - Math.sin(latRad) * Math.sin(declination)) /
+    (Math.cos(latRad) * Math.cos(declination))
 
   // Clamp for extreme latitudes
   if (cosHourAngle < -1) return 24 * 60 // midnight sun

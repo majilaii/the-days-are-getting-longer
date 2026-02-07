@@ -1,4 +1,5 @@
 import { createClient } from 'next-sanity'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || ''
@@ -134,6 +135,9 @@ export async function POST(request: Request) {
         slug: authorDoc.slug,
       },
     }
+
+    // Bust the cache so the page updates immediately
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ mark })
   } catch (err) {
