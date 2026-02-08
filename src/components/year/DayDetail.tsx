@@ -89,12 +89,14 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
     localStorage.setItem('daymark_pin', pin)
 
     // Optimistic: show "Sealed." immediately and update the grid
+    // Don't include photo in the optimistic mark — the real asset ref
+    // comes back from Sanity after upload. Including a placeholder with
+    // an empty _ref crashes urlFor().
     const optimisticMark: DayMark = {
       _id: `optimistic-${Date.now()}`,
       _createdAt: new Date().toISOString(),
       date,
       note: note.trim(),
-      photo: photoPreview ? { _type: 'image', asset: { _ref: '', _type: 'reference' } } : undefined,
       author: undefined, // will be filled by server response
     }
 
@@ -174,7 +176,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
                 <p className="font-typewriter text-ink dark:text-ink-light leading-relaxed">
                   {mark.note}
                 </p>
-                {mark.photo?.asset && (
+                {mark.photo?.asset?._ref && (
                   <div className="relative rounded-lg overflow-hidden mt-2">
                     <Image
                       src={urlFor(mark.photo).width(800).url()}
