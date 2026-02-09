@@ -38,7 +38,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
   const [pin, setPin] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -83,32 +83,12 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
     e.preventDefault()
     if (!note.trim() || !pin.trim()) return
 
+    setStatus('submitting')
     setErrorMsg('')
 
     // Save PIN for next time
     localStorage.setItem('daymark_pin', pin)
 
-    // Optimistic: show "Sealed." immediately and update the grid
-    // Don't include photo in the optimistic mark — the real asset ref
-    // comes back from Sanity after upload. Including a placeholder with
-    // an empty _ref crashes urlFor().
-    const optimisticMark: DayMark = {
-      _id: `optimistic-${Date.now()}`,
-      _createdAt: new Date().toISOString(),
-      date,
-      note: note.trim(),
-      author: undefined, // will be filled by server response
-    }
-
-    setStatus('success')
-    onMarkAdded(optimisticMark)
-
-    // Brief "Sealed." flash, then close — don't wait for the network
-    setTimeout(() => {
-      onClose()
-    }, 1200)
-
-    // Fire the request in the background
     const formData = new FormData()
     formData.append('pin', pin)
     formData.append('date', date)
@@ -117,7 +97,7 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
 
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
+      const timeout = setTimeout(() => controller.abort(), 30000)
 
       const res = await fetch('/api/mark-day', {
         method: 'POST',
@@ -127,11 +107,29 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
       clearTimeout(timeout)
 
       if (!res.ok) {
-        const data = await res.json()
-        console.error('mark-day failed:', data.error)
+        const data = await res.json().catch(() => ({ error: `Server returned ${res.status}` }))
+        setStatus('error')
+        setErrorMsg(data.error || `Failed (${res.status})`)
+        return
       }
+
+      const { mark } = await res.json()
+
+      // Server confirmed — update the grid with real data
+      onMarkAdded(mark)
+      setStatus('success')
+
+      // Brief "Sealed." flash, then close
+      setTimeout(() => {
+        onClose()
+      }, 1200)
     } catch (err) {
-      console.error('mark-day network error:', err)
+      setStatus('error')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setErrorMsg('Request timed out. Try again.')
+      } else {
+        setErrorMsg('Network error. Check your connection and try again.')
+      }
     }
   }
 
@@ -263,10 +261,10 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
                 />
                 <button
                   type="submit"
-                  disabled={!note.trim() || !pin.trim()}
+                  disabled={!note.trim() || !pin.trim() || status === 'submitting'}
                   className="flex-1 bg-ink dark:bg-ink-light text-paper dark:text-paper-dark font-typewriter text-sm py-2 rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity cursor-pointer"
                 >
-                  Cross it out
+                  {status === 'submitting' ? 'Sealing...' : 'Cross it out'}
                 </button>
               </div>
 

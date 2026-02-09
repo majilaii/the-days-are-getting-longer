@@ -137,14 +137,17 @@ export async function POST(request: Request) {
     }
 
     // Bust the cache so the page updates immediately
-    revalidatePath('/', 'layout')
+    try {
+      revalidatePath('/', 'layout')
+    } catch (revalError) {
+      console.error('revalidatePath failed (non-fatal):', revalError)
+    }
 
     return NextResponse.json({ mark })
   } catch (err) {
     console.error('mark-day error:', err)
-    return NextResponse.json(
-      { error: 'Something went wrong. Try again.' },
-      { status: 500 }
-    )
+    const message =
+      err instanceof Error ? err.message : 'Something went wrong. Try again.'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
