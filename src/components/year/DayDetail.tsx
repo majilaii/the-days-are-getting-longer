@@ -33,6 +33,37 @@ function formatTimestamp(ts: string): string {
   })
 }
 
+/** Compress an image file to fit under Vercel's 4.5 MB body limit */
+function compressImage(file: File, maxDim = 1600, quality = 0.8): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return reject(new Error('Canvas not supported'))
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error('Compression failed'))
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+        },
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => reject(new Error('Failed to load image'))
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps) {
   const [note, setNote] = useState('')
   const [pin, setPin] = useState('')
@@ -93,7 +124,15 @@ export function DayDetail({ date, marks, onClose, onMarkAdded }: DayDetailProps)
     formData.append('pin', pin)
     formData.append('date', date)
     formData.append('note', note.trim())
-    if (photo) formData.append('photo', photo)
+    if (photo) {
+      try {
+        const compressed = await compressImage(photo)
+        formData.append('photo', compressed)
+      } catch {
+        // If compression fails, try the original
+        formData.append('photo', photo)
+      }
+    }
 
     try {
       const controller = new AbortController()
