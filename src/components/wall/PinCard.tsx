@@ -57,7 +57,7 @@ export function PinCard({ pin }: { pin: WallPin }) {
     <div className="break-inside-avoid mb-4 group">
       <div className="rounded-xl overflow-hidden bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 ease-out">
         {/* Photo pin */}
-        {pin.pinType === "photo" && pin.photo && (
+        {pin.pinType === "photo" && pin.photo?.asset?._ref && (
           <div className="relative">
             <Image
               src={urlFor(pin.photo).width(600).url()}

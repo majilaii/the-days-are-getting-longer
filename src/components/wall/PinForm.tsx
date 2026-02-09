@@ -11,6 +11,37 @@ const PIN_TYPES = [
   { value: 'video', label: 'Video', icon: Video },
 ] as const
 
+/** Compress an image file to fit under Vercel's 4.5 MB body limit */
+function compressImage(file: File, maxDim = 1600, quality = 0.8): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return reject(new Error('Canvas not supported'))
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error('Compression failed'))
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+        },
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => reject(new Error('Failed to load image'))
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 interface PinFormProps {
   onPinAdded: (pin: WallPin) => void
 }
@@ -25,6 +56,7 @@ export function PinForm({ onPinAdded }: PinFormProps) {
   const [videoUrl, setVideoUrl] = useState('')
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -56,6 +88,7 @@ export function PinForm({ onPinAdded }: PinFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSubmitting(true)
 
     // Client-side validation first (before any network)
     const formData = new FormData()
@@ -63,57 +96,45 @@ export function PinForm({ onPinAdded }: PinFormProps) {
     formData.append('pinType', pinType)
     if (caption.trim()) formData.append('caption', caption.trim())
 
-    let photoFile: File | undefined
     if (pinType === 'photo') {
-      photoFile = fileRef.current?.files?.[0]
+      const photoFile = fileRef.current?.files?.[0]
       if (!photoFile) {
         setError('Please select a photo')
+        setSubmitting(false)
         return
       }
-      formData.append('photo', photoFile)
+      try {
+        const compressed = await compressImage(photoFile)
+        formData.append('photo', compressed)
+      } catch {
+        formData.append('photo', photoFile)
+      }
     } else if (pinType === 'quote') {
       if (!quote.trim()) {
         setError('Please enter a quote')
+        setSubmitting(false)
         return
       }
       formData.append('quote', quote.trim())
     } else if (pinType === 'song') {
       if (!songUrl.trim()) {
         setError('Please enter a song URL')
+        setSubmitting(false)
         return
       }
       formData.append('songUrl', songUrl.trim())
     } else if (pinType === 'video') {
       if (!videoUrl.trim()) {
         setError('Please enter a video URL')
+        setSubmitting(false)
         return
       }
       formData.append('videoUrl', videoUrl.trim())
     }
 
-    // Optimistic: build a fake pin and update the wall immediately
-    const optimisticPin: WallPin = {
-      _id: `optimistic-${Date.now()}`,
-      _createdAt: new Date().toISOString(),
-      date: new Date().toISOString().split('T')[0],
-      pinType,
-      photo: photoFile && photoPreview
-        ? { _type: 'image', asset: { _ref: '', _type: 'reference' } }
-        : undefined,
-      quote: pinType === 'quote' ? quote.trim() : undefined,
-      songUrl: pinType === 'song' ? songUrl.trim() : undefined,
-      videoUrl: pinType === 'video' ? videoUrl.trim() : undefined,
-      caption: caption.trim() || undefined,
-      author: undefined,
-    }
-
-    onPinAdded(optimisticPin)
-    handleClose()
-
-    // Fire the request in the background
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
+      const timeout = setTimeout(() => controller.abort(), 30000)
 
       const res = await fetch('/api/pin-wall', {
         method: 'POST',
@@ -123,11 +144,25 @@ export function PinForm({ onPinAdded }: PinFormProps) {
       clearTimeout(timeout)
 
       if (!res.ok) {
-        const data = await res.json()
-        console.error('pin-wall failed:', data.error)
+        const data = await res.json().catch(() => ({ error: `Server returned ${res.status}` }))
+        setError(data.error || `Failed (${res.status})`)
+        setSubmitting(false)
+        return
       }
+
+      const { pin: wallPin } = await res.json()
+
+      // Server confirmed — update the wall with real data
+      onPinAdded(wallPin)
+      setSubmitting(false)
+      handleClose()
     } catch (err) {
-      console.error('pin-wall network error:', err)
+      setSubmitting(false)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Request timed out. Try again.')
+      } else {
+        setError('Network error. Check your connection and try again.')
+      }
     }
   }
 
@@ -308,9 +343,10 @@ export function PinForm({ onPinAdded }: PinFormProps) {
               {/* Submit */}
               <button
                 type="submit"
+                disabled={submitting}
                 className="w-full py-2.5 rounded-lg bg-accent dark:bg-accent-light text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                Pin it
+                {submitting ? 'Pinning...' : 'Pin it'}
               </button>
             </form>
           </div>
